@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.9.34728.123
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PlateUp!-StaticCamera", "PlateUp!-StaticCamera.csproj", "{5554FB81-B21C-4735-8D55-6AB05F6C453B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5554FB81-B21C-4735-8D55-6AB05F6C453B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5554FB81-B21C-4735-8D55-6AB05F6C453B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5554FB81-B21C-4735-8D55-6AB05F6C453B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5554FB81-B21C-4735-8D55-6AB05F6C453B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {2ACF2275-613F-4CA2-A471-09C44E474007}
+	EndGlobalSection
+EndGlobal
