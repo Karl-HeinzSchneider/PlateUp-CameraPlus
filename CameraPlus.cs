@@ -209,7 +209,8 @@ namespace PlateUp_CameraPlus
 
         private void UpdateScroll()
         {
-            float Delta = 0.2f;
+            //float Delta = 0.2f;
+            float Delta = this.ScrollDeltaScaling(this.CameraFOV);
             float Scroll = this.ScrollAction.ReadValue<float>();
 
             if (Scroll > 0)
@@ -222,6 +223,12 @@ namespace PlateUp_CameraPlus
             }
 
             this.CameraFOV = Mathf.Clamp(this.CameraFOV, 3.0f, 69.0f);
+        }
+
+        private float ScrollDeltaScaling(float value)
+        {
+            float scaled = 0.110037f * Mathf.Exp(0.00888164f* value);
+            return scaled;
         }
 
         private void SetCameraPosition()
