@@ -19,9 +19,13 @@ namespace PlateUp_CameraPlus
         private bool StaticCameraEnabled = false;
 
         private InputAction EditAction;
-        //private bool EditModeEnabled = false;       
+        //private bool EditModeEnabled = false;
+        //
+        private InputAction FollowAction;
+        private bool FollowCameraEnabled = false;
 
         private InputAction ScrollAction;
+        private InputAction ScrollActionMouse;
         private bool IsScrolling = false;
 
         private Vector3 CameraPosition = new Vector3(0, 0, 0);
@@ -29,6 +33,8 @@ namespace PlateUp_CameraPlus
         private float CameraFOV = 10.0f;
 
         private bool PositionButtonPressed = false;
+
+        private bool FirstTime = true;
 
         protected override void Initialise()
         {
@@ -43,9 +49,10 @@ namespace PlateUp_CameraPlus
             Camera MainCamera = Camera.main;
 
             //
-            if (this.PositionButtonPressed)
+            if (this.PositionButtonPressed && !this.FollowCameraEnabled)
             {
                 this.SetCameraPosition();
+                this.FirstTime = false;
             }
 
             if (this.StaticCameraEnabled)
@@ -53,6 +60,12 @@ namespace PlateUp_CameraPlus
                 if (this.IsScrolling)
                 {
                     this.UpdateScroll();
+                }
+
+                if (this.FollowCameraEnabled || this.FirstTime)
+                {
+                    this.SetCameraPosition();
+                    this.FirstTime = false;
                 }
 
                 ((Behaviour)MainCamera.GetComponent<CinemachineBrain>()).enabled = false;
@@ -126,9 +139,19 @@ namespace PlateUp_CameraPlus
             });
             this.EditAction.Enable();
 
+            // Follow
+            this.FollowAction = new InputAction("ToggleFollowCamera", (InputActionType)0, "<Keyboard>/F", (string)null, (string)null, (string)null);
+            InputActionSetupExtensions.AddBinding(this.FollowAction, "<Gamepad>/rightShoulder/", (string)null, (string)null, (string)null);
+
+            this.FollowAction.performed += (Action<InputAction.CallbackContext>)(context =>
+            {
+                this.ToggleFollowCamera();
+            });
+            this.FollowAction.Enable();
+
             // Scroll
-            this.ScrollAction = new InputAction("CameraZoom", (InputActionType)0, "<Mouse>/scroll/y", (string)null, (string)null, (string)null);
-            InputActionSetupExtensions.AddBinding(this.ScrollAction, "<Gamepad>/rightStick/y", (string)null, (string)null, (string)null);
+            this.ScrollAction = new InputAction("CameraZoom", (InputActionType)0, "<Gamepad>/rightStick/y", (string)null, (string)null, (string)null);
+            
             this.ScrollAction.started += (Action<InputAction.CallbackContext>)(context =>
             {
                 this.IsScrolling = true;
@@ -136,8 +159,17 @@ namespace PlateUp_CameraPlus
             this.ScrollAction.canceled += (Action<InputAction.CallbackContext>)(context =>
             {
                 this.IsScrolling = false;
-            });
+            });         
             this.ScrollAction.Enable();
+
+            // Scroll Mouse
+            this.ScrollActionMouse = new InputAction("CameraZoomMouse", (InputActionType)0, "<Mouse>/scroll/y", (string)null, (string)null, (string)null);        
+
+            this.ScrollActionMouse.performed += (Action<InputAction.CallbackContext>)(context =>
+            {  
+                this.UpdateScrollMouse();
+            });
+            this.ScrollActionMouse.Enable();
         }
 
         private void ToggleStaticCamera()
@@ -151,7 +183,6 @@ namespace PlateUp_CameraPlus
                 this.EnableStaticCamera();
             }
         }
-
         private void EnableStaticCamera()
         {
             this.StaticCameraEnabled = true;
@@ -163,9 +194,37 @@ namespace PlateUp_CameraPlus
         }
 
 
+        private void ToggleFollowCamera()
+        {
+            if (!this.StaticCameraEnabled)
+            {
+                return;
+            }
+
+            if (this.FollowCameraEnabled)
+            {
+                this.DisableFollowCamera();
+            }
+            else
+            {
+                this.EnableFollowCamera();
+            }
+        }
+        private void EnableFollowCamera()
+        {
+            this.FollowCameraEnabled = true;
+        }
+
+        private void DisableFollowCamera()
+        {
+            this.FollowCameraEnabled = false;
+        }
+
+
         private void UpdateScroll()
         {
-            float Delta = 0.2f;
+            //float Delta = 0.2f;
+            float Delta = this.ScrollDeltaScaling(this.CameraFOV);
             float Scroll = this.ScrollAction.ReadValue<float>();
 
             if (Scroll > 0)
@@ -179,10 +238,34 @@ namespace PlateUp_CameraPlus
 
             this.CameraFOV = Mathf.Clamp(this.CameraFOV, 3.0f, 69.0f);
         }
+        private void UpdateScrollMouse()
+        {
+            float Extra = 8.0f;
+            //float Delta = 0.2f;
+            float Delta = this.ScrollDeltaScaling(this.CameraFOV) *Extra;
+            float Scroll = this.ScrollActionMouse.ReadValue<float>();
+            
+
+            if (Scroll > 0)
+            {
+                this.CameraFOV = this.CameraFOV - Delta;
+            }
+            else
+            {
+                this.CameraFOV = this.CameraFOV + Delta;
+            }
+
+            this.CameraFOV = Mathf.Clamp(this.CameraFOV, 3.0f, 69.0f);
+        }
+        private float ScrollDeltaScaling(float value)
+        {
+            float scaled = 0.110037f * Mathf.Exp(0.00888164f* value);
+            return scaled;
+        }
 
         private void SetCameraPosition()
         {
-            Debug.Log("KHS LOG - SetCameraPosition");
+            //Debug.Log("KHS LOG - SetCameraPosition");
 
             // Find local player ID
             int LocalID = 0;
@@ -191,13 +274,13 @@ namespace PlateUp_CameraPlus
             {
                 if (info.IsLocalUser)
                 {
-                    this.LogObject(info);
+                    //this.LogObject(info);
                     LocalID = info.ID;
                     break;
                 }
             }
 
-            Debug.Log($"Local ID: {LocalID}");
+            //Debug.Log($"Local ID: {LocalID}");
 
             //
             PlayerView[] PlayerViewArray = GameObject.FindObjectsOfType<PlayerView>();
@@ -206,7 +289,7 @@ namespace PlateUp_CameraPlus
             {
                 int ID = this.GetPlayerID(view);
 
-                Debug.Log($"check ID: {ID}");
+                //Debug.Log($"check ID: {ID}");
 
                 if (ID != LocalID)
                 {
