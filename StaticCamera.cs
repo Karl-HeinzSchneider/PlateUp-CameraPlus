@@ -28,6 +28,8 @@ namespace PlateUp_StaticCamera
         private Vector3 CameraVelocity = new Vector3(0, 0, 0);
         private float CameraFOV = 10.0f;
 
+        private bool PositionButtonPressed = false;
+
         protected override void Initialise()
         {
             base.Initialise();
@@ -38,6 +40,12 @@ namespace PlateUp_StaticCamera
         protected override void OnUpdate()
         {
             Camera MainCamera = Camera.main;
+     
+            //
+            if(this.PositionButtonPressed)
+            {
+                this.SetCameraPosition();
+            }
 
             if (this.StaticCameraEnabled)
             {
@@ -80,6 +88,14 @@ namespace PlateUp_StaticCamera
             this.EditAction.performed += (Action<InputAction.CallbackContext>)(context =>
             {
                 this.SetCameraPosition();
+            });
+            this.EditAction.started += (Action<InputAction.CallbackContext>)(context =>
+            {
+                this.PositionButtonPressed = true;
+            });
+            this.EditAction.canceled += (Action<InputAction.CallbackContext>)(context =>
+            {
+                this.PositionButtonPressed = false;
             });
             this.EditAction.Enable();
 
