@@ -265,7 +265,7 @@ namespace PlateUp_CameraPlus
 
         private void SetCameraPosition()
         {
-            Debug.Log("KHS LOG - SetCameraPosition");
+            //Debug.Log("KHS LOG - SetCameraPosition");
 
             // Find local player ID
             int LocalID = 0;
@@ -274,13 +274,13 @@ namespace PlateUp_CameraPlus
             {
                 if (info.IsLocalUser)
                 {
-                    this.LogObject(info);
+                    //this.LogObject(info);
                     LocalID = info.ID;
                     break;
                 }
             }
 
-            Debug.Log($"Local ID: {LocalID}");
+            //Debug.Log($"Local ID: {LocalID}");
 
             //
             PlayerView[] PlayerViewArray = GameObject.FindObjectsOfType<PlayerView>();
@@ -289,7 +289,7 @@ namespace PlateUp_CameraPlus
             {
                 int ID = this.GetPlayerID(view);
 
-                Debug.Log($"check ID: {ID}");
+                //Debug.Log($"check ID: {ID}");
 
                 if (ID != LocalID)
                 {
