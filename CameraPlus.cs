@@ -25,6 +25,7 @@ namespace PlateUp_CameraPlus
         private bool FollowCameraEnabled = false;
 
         private InputAction ScrollAction;
+        private InputAction ScrollActionMouse;
         private bool IsScrolling = false;
 
         private Vector3 CameraPosition = new Vector3(0, 0, 0);
@@ -145,8 +146,8 @@ namespace PlateUp_CameraPlus
             this.FollowAction.Enable();
 
             // Scroll
-            this.ScrollAction = new InputAction("CameraZoom", (InputActionType)0, "<Mouse>/scroll/y", (string)null, (string)null, (string)null);
-            InputActionSetupExtensions.AddBinding(this.ScrollAction, "<Gamepad>/rightStick/y", (string)null, (string)null, (string)null);
+            this.ScrollAction = new InputAction("CameraZoom", (InputActionType)0, "<Gamepad>/rightStick/y", (string)null, (string)null, (string)null);
+            
             this.ScrollAction.started += (Action<InputAction.CallbackContext>)(context =>
             {
                 this.IsScrolling = true;
@@ -154,8 +155,17 @@ namespace PlateUp_CameraPlus
             this.ScrollAction.canceled += (Action<InputAction.CallbackContext>)(context =>
             {
                 this.IsScrolling = false;
-            });
+            });         
             this.ScrollAction.Enable();
+
+            // Scroll Mouse
+            this.ScrollActionMouse = new InputAction("CameraZoomMouse", (InputActionType)0, "<Mouse>/scroll/y", (string)null, (string)null, (string)null);        
+
+            this.ScrollActionMouse.performed += (Action<InputAction.CallbackContext>)(context =>
+            {  
+                this.UpdateScrollMouse();
+            });
+            this.ScrollActionMouse.Enable();
         }
 
         private void ToggleStaticCamera()
@@ -224,7 +234,25 @@ namespace PlateUp_CameraPlus
 
             this.CameraFOV = Mathf.Clamp(this.CameraFOV, 3.0f, 69.0f);
         }
+        private void UpdateScrollMouse()
+        {
+            float Extra = 8.0f;
+            //float Delta = 0.2f;
+            float Delta = this.ScrollDeltaScaling(this.CameraFOV) *Extra;
+            float Scroll = this.ScrollActionMouse.ReadValue<float>();
+            
 
+            if (Scroll > 0)
+            {
+                this.CameraFOV = this.CameraFOV - Delta;
+            }
+            else
+            {
+                this.CameraFOV = this.CameraFOV + Delta;
+            }
+
+            this.CameraFOV = Mathf.Clamp(this.CameraFOV, 3.0f, 69.0f);
+        }
         private float ScrollDeltaScaling(float value)
         {
             float scaled = 0.110037f * Mathf.Exp(0.00888164f* value);
