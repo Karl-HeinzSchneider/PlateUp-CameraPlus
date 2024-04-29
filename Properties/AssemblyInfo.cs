@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("PlateUp!-StaticCamera")]
+[assembly: AssemblyTitle("CameraPlus")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Karl-Heinz Schneider")]
-[assembly: AssemblyProduct("PlateUp!-StaticCamera")]
+[assembly: AssemblyCompany("")]
+[assembly: AssemblyProduct("CameraPlus")]
 [assembly: AssemblyCopyright("Copyright ©  2024")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("5554fb81-b21c-4735-8d55-6ab05f6c453b")]
+[assembly: Guid("d43f6e56-aa4a-4689-8ab4-c027f10fa9b0")]
 
 // Version information for an assembly consists of the following four values:
 //

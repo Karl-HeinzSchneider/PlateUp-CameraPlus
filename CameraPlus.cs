@@ -11,10 +11,10 @@ using Unity.Entities;
 using Unity.Collections;
 
 
-namespace PlateUp_StaticCamera
+namespace PlateUp_CameraPlus
 {
-    public class StaticCamera : GenericSystemBase, IModSystem       
-    {     
+    public class CameraPlus : GenericSystemBase, IModSystem
+    {
         private InputAction CameraAction;
         private bool StaticCameraEnabled = false;
 
@@ -33,16 +33,16 @@ namespace PlateUp_StaticCamera
         protected override void Initialise()
         {
             base.Initialise();
-         
+
             this.InitKeybindings();
         }
 
         protected override void OnUpdate()
         {
             Camera MainCamera = Camera.main;
-     
+
             //
-            if(this.PositionButtonPressed)
+            if (this.PositionButtonPressed)
             {
                 this.SetCameraPosition();
             }
@@ -57,25 +57,25 @@ namespace PlateUp_StaticCamera
                 ((Behaviour)MainCamera.GetComponent<CinemachineBrain>()).enabled = false;
                 MainCamera.transform.position = Vector3.SmoothDamp(MainCamera.transform.position, this.CameraPosition, ref this.CameraVelocity, 0.5f);
 
-                MainCamera.fieldOfView = this.CameraFOV;            
+                MainCamera.fieldOfView = this.CameraFOV;
             }
             else
             {
                 ((Behaviour)MainCamera.GetComponent<CinemachineBrain>()).enabled = true;
             }
         }
-     
+
         private void InitKeybindings()
         {
             // https://docs.unity3d.com/Packages/com.unity.inputsystem@1.0/api/UnityEngine.InputSystem.Gamepad.html#properties
 
             // CameraAction
-            this.CameraAction = new InputAction("ToggleStaticCamera", (InputActionType) 0,"<Keyboard>/Q",(string) null, (string) null, (string) null);
-            InputActionSetupExtensions.AddBinding(this.CameraAction,"<Gamepad>/rightStickPress/", (string) null, (string)null, (string)null);
+            this.CameraAction = new InputAction("ToggleStaticCamera", (InputActionType)0, "<Keyboard>/Q", (string)null, (string)null, (string)null);
+            InputActionSetupExtensions.AddBinding(this.CameraAction, "<Gamepad>/rightStickPress/", (string)null, (string)null, (string)null);
 
             this.CameraAction.performed += (Action<InputAction.CallbackContext>)(context =>
             {
-               this.ToggleStaticCamera();   
+                this.ToggleStaticCamera();
             });
             this.CameraAction.Enable();
 
@@ -110,7 +110,7 @@ namespace PlateUp_StaticCamera
             {
                 this.IsScrolling = false;
             });
-            this.ScrollAction.Enable();       
+            this.ScrollAction.Enable();
         }
 
         private void ToggleStaticCamera()
@@ -134,7 +134,7 @@ namespace PlateUp_StaticCamera
         {
             this.StaticCameraEnabled = false;
         }
-       
+
 
         private void UpdateScroll()
         {
@@ -143,7 +143,7 @@ namespace PlateUp_StaticCamera
 
             if (Scroll > 0)
             {
-                this.CameraFOV = this.CameraFOV - Delta;            
+                this.CameraFOV = this.CameraFOV - Delta;
             }
             else
             {
@@ -154,13 +154,13 @@ namespace PlateUp_StaticCamera
         }
 
         private void SetCameraPosition()
-        {     
+        {
             Debug.Log("KHS LOG - SetCameraPosition");
 
             // Find local player ID
             int LocalID = 0;
 
-            foreach(PlayerInfo info in Players.Main.All())
+            foreach (PlayerInfo info in Players.Main.All())
             {
                 if (info.IsLocalUser)
                 {
@@ -181,7 +181,7 @@ namespace PlateUp_StaticCamera
 
                 Debug.Log($"check ID: {ID}");
 
-                if(ID != LocalID)
+                if (ID != LocalID)
                 {
                     continue;
                 }
@@ -193,8 +193,8 @@ namespace PlateUp_StaticCamera
                 ViewPosition.y = Height;
 
                 float DeltaZ = 30f;
- 
-                this.CameraPosition = new Vector3(ViewPosition.x, Height, ViewPosition.z -DeltaZ);
+
+                this.CameraPosition = new Vector3(ViewPosition.x, Height, ViewPosition.z - DeltaZ);
 
                 //Component MainCamera = Camera.main;
                 //Debug.Log("MainCamera XYZ");
