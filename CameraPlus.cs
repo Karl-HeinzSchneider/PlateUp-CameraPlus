@@ -34,6 +34,8 @@ namespace PlateUp_CameraPlus
 
         private bool PositionButtonPressed = false;
 
+        private bool FirstTime = true;
+
         protected override void Initialise()
         {
             base.Initialise();
@@ -50,6 +52,7 @@ namespace PlateUp_CameraPlus
             if (this.PositionButtonPressed && !this.FollowCameraEnabled)
             {
                 this.SetCameraPosition();
+                this.FirstTime = false;
             }
 
             if (this.StaticCameraEnabled)
@@ -59,9 +62,10 @@ namespace PlateUp_CameraPlus
                     this.UpdateScroll();
                 }
 
-                if (this.FollowCameraEnabled)
+                if (this.FollowCameraEnabled || this.FirstTime)
                 {
                     this.SetCameraPosition();
+                    this.FirstTime = false;
                 }
 
                 ((Behaviour)MainCamera.GetComponent<CinemachineBrain>()).enabled = false;
