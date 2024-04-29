@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Reflection;
 
 using Cinemachine;
 using Kitchen;
@@ -12,8 +9,6 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using Unity.Entities;
 using Unity.Collections;
-using Random = System.Random;
-using System.Reflection;
 
 
 namespace PlateUp_StaticCamera
@@ -24,13 +19,14 @@ namespace PlateUp_StaticCamera
         private bool StaticCameraEnabled = false;
 
         private InputAction EditAction;
-        private bool EditModeEnabled = false;
+        //private bool EditModeEnabled = false;
 
         private InputAction ScrollAction;
         private bool IsScrolling = false;
 
         private Vector3 CameraPosition = new Vector3(0, 0, 0);
         private Vector3 CameraVelocity = new Vector3(0, 0, 0);
+        private float CameraFOV = 10.0f;
 
         protected override void Initialise()
         {
@@ -41,12 +37,19 @@ namespace PlateUp_StaticCamera
 
         protected override void OnUpdate()
         {
-            Component MainCamera = Camera.main;
+            Camera MainCamera = Camera.main;
 
             if (this.StaticCameraEnabled)
             {
+                if (this.IsScrolling)
+                {
+                    this.UpdateScroll();
+                }
+
                 ((Behaviour)MainCamera.GetComponent<CinemachineBrain>()).enabled = false;
                 MainCamera.transform.position = Vector3.SmoothDamp(MainCamera.transform.position, this.CameraPosition, ref this.CameraVelocity, 0.5f);
+
+                MainCamera.fieldOfView = this.CameraFOV;            
             }
             else
             {
@@ -62,7 +65,7 @@ namespace PlateUp_StaticCamera
             this.CameraAction = new InputAction("ToggleStaticCamera", (InputActionType) 0,"<Keyboard>/Q",(string) null, (string) null, (string) null);
             InputActionSetupExtensions.AddBinding(this.CameraAction,"<Gamepad>/rightStickPress/", (string) null, (string)null, (string)null);
 
-            this.CameraAction.performed += (Action<InputAction.CallbackContext>)(ctx =>
+            this.CameraAction.performed += (Action<InputAction.CallbackContext>)(context =>
             {
                this.ToggleStaticCamera();   
             });
@@ -70,13 +73,28 @@ namespace PlateUp_StaticCamera
 
             //
             this.EditAction = new InputAction("SetCameraPosition", (InputActionType)0, "<Keyboard>/E", (string)null, (string)null, (string)null);
-            InputActionSetupExtensions.AddBinding(this.EditAction, "<Gamepad>/selectButton/", (string)null, (string)null, (string)null);
+            //InputActionSetupExtensions.AddBinding(this.EditAction, "<Gamepad>/selectButton/", (string)null, (string)null, (string)null);
+            InputActionSetupExtensions.AddBinding(this.EditAction, "<Gamepad>/rightTrigger/", (string)null, (string)null, (string)null);
 
-            this.EditAction.performed += (Action<InputAction.CallbackContext>)(ctx =>
+
+            this.EditAction.performed += (Action<InputAction.CallbackContext>)(context =>
             {
                 this.SetCameraPosition();
             });
             this.EditAction.Enable();
+
+            // Scroll
+            this.ScrollAction = new InputAction("CameraZoom", (InputActionType)0, "<Mouse>/scroll/y", (string)null, (string)null, (string)null);
+            InputActionSetupExtensions.AddBinding(this.ScrollAction, "<Gamepad>/rightStick/y", (string)null, (string)null, (string)null);
+            this.ScrollAction.started += (Action<InputAction.CallbackContext>)(context =>
+            {
+                this.IsScrolling = true;
+            });
+            this.ScrollAction.canceled += (Action<InputAction.CallbackContext>)(context =>
+            {
+                this.IsScrolling = false;
+            });
+            this.ScrollAction.Enable();       
         }
 
         private void ToggleStaticCamera()
@@ -99,6 +117,24 @@ namespace PlateUp_StaticCamera
         private void DisableStaticCamera()
         {
             this.StaticCameraEnabled = false;
+        }
+       
+
+        private void UpdateScroll()
+        {
+            float Delta = 0.2f;
+            float Scroll = this.ScrollAction.ReadValue<float>();
+
+            if (Scroll > 0)
+            {
+                this.CameraFOV = this.CameraFOV - Delta;            
+            }
+            else
+            {
+                this.CameraFOV = this.CameraFOV + Delta;
+            }
+
+            this.CameraFOV = Mathf.Clamp(this.CameraFOV, 3.0f, 69.0f);
         }
 
         private void SetCameraPosition()
@@ -148,7 +184,7 @@ namespace PlateUp_StaticCamera
                 //Debug.Log("MainCamera XYZ");
                 //Debug.Log(MainCamera.transform.position.x);
                 //Debug.Log(MainCamera.transform.position.y);
-                //Debug.Log(MainCamera.transform.position.z);
+                //Debug.Log(MainCamera.transform.position.z);               
             }
         }
 
