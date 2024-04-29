@@ -19,7 +19,7 @@ namespace PlateUp_CameraPlus
         private bool StaticCameraEnabled = false;
 
         private InputAction EditAction;
-        //private bool EditModeEnabled = false;
+        //private bool EditModeEnabled = false;       
 
         private InputAction ScrollAction;
         private bool IsScrolling = false;
@@ -34,6 +34,7 @@ namespace PlateUp_CameraPlus
         {
             base.Initialise();
 
+            this.RemoveDefaultTriggerBinding();
             this.InitKeybindings();
         }
 
@@ -62,6 +63,32 @@ namespace PlateUp_CameraPlus
             else
             {
                 ((Behaviour)MainCamera.GetComponent<CinemachineBrain>()).enabled = true;
+            }
+        }
+
+        private void RemoveDefaultTriggerBinding()
+        {
+            // < Gamepad >/ rightTrigger
+
+            foreach (var action in InputSystem.ListEnabledActions())
+            {
+                //Debug.Log(action.ToString());
+
+                int index = 0;
+
+                foreach (var binding in action.bindings)
+                {
+                    //Debug.Log(binding.ToString());
+                    
+                    string name = binding.ToString();
+              
+                    if (name.EndsWith("rightTrigger"))
+                    {     
+                        action.ChangeBinding(index).Erase();
+                    }                   
+
+                    index++;
+                }
             }
         }
 
