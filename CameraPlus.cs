@@ -19,7 +19,10 @@ namespace PlateUp_CameraPlus
         private bool StaticCameraEnabled = false;
 
         private InputAction EditAction;
-        //private bool EditModeEnabled = false;       
+        //private bool EditModeEnabled = false;
+        //
+        private InputAction FollowAction;
+        private bool FollowCameraEnabled = false;
 
         private InputAction ScrollAction;
         private bool IsScrolling = false;
@@ -43,7 +46,7 @@ namespace PlateUp_CameraPlus
             Camera MainCamera = Camera.main;
 
             //
-            if (this.PositionButtonPressed)
+            if (this.PositionButtonPressed && !this.FollowCameraEnabled)
             {
                 this.SetCameraPosition();
             }
@@ -53,6 +56,11 @@ namespace PlateUp_CameraPlus
                 if (this.IsScrolling)
                 {
                     this.UpdateScroll();
+                }
+
+                if (this.FollowCameraEnabled)
+                {
+                    this.SetCameraPosition();
                 }
 
                 ((Behaviour)MainCamera.GetComponent<CinemachineBrain>()).enabled = false;
@@ -126,6 +134,16 @@ namespace PlateUp_CameraPlus
             });
             this.EditAction.Enable();
 
+            // Follow
+            this.FollowAction = new InputAction("ToggleFollowCamera", (InputActionType)0, "<Keyboard>/F", (string)null, (string)null, (string)null);
+            InputActionSetupExtensions.AddBinding(this.FollowAction, "<Gamepad>/rightShoulder/", (string)null, (string)null, (string)null);
+
+            this.FollowAction.performed += (Action<InputAction.CallbackContext>)(context =>
+            {
+                this.ToggleFollowCamera();
+            });
+            this.FollowAction.Enable();
+
             // Scroll
             this.ScrollAction = new InputAction("CameraZoom", (InputActionType)0, "<Mouse>/scroll/y", (string)null, (string)null, (string)null);
             InputActionSetupExtensions.AddBinding(this.ScrollAction, "<Gamepad>/rightStick/y", (string)null, (string)null, (string)null);
@@ -151,7 +169,6 @@ namespace PlateUp_CameraPlus
                 this.EnableStaticCamera();
             }
         }
-
         private void EnableStaticCamera()
         {
             this.StaticCameraEnabled = true;
@@ -160,6 +177,33 @@ namespace PlateUp_CameraPlus
         private void DisableStaticCamera()
         {
             this.StaticCameraEnabled = false;
+        }
+
+
+        private void ToggleFollowCamera()
+        {
+            if (!this.StaticCameraEnabled)
+            {
+                return;
+            }
+
+            if (this.FollowCameraEnabled)
+            {
+                this.DisableFollowCamera();
+            }
+            else
+            {
+                this.EnableFollowCamera();
+            }
+        }
+        private void EnableFollowCamera()
+        {
+            this.FollowCameraEnabled = true;
+        }
+
+        private void DisableFollowCamera()
+        {
+            this.FollowCameraEnabled = false;
         }
 
 
