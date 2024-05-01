@@ -40,7 +40,7 @@ namespace PlateUp_CameraPlus
         {
             base.Initialise();
 
-            this.RemoveDefaultTriggerBinding();
+            //this.RemoveDefaultTriggerBinding();
             this.InitKeybindings();
         }
 
@@ -122,7 +122,8 @@ namespace PlateUp_CameraPlus
             //
             this.EditAction = new InputAction("SetCameraPosition", (InputActionType)0, "<Keyboard>/E", (string)null, (string)null, (string)null);
             //InputActionSetupExtensions.AddBinding(this.EditAction, "<Gamepad>/selectButton/", (string)null, (string)null, (string)null);
-            InputActionSetupExtensions.AddBinding(this.EditAction, "<Gamepad>/rightTrigger/", (string)null, (string)null, (string)null);
+            //InputActionSetupExtensions.AddBinding(this.EditAction, "<Gamepad>/rightTrigger/", (string)null, (string)null, (string)null);
+            InputActionSetupExtensions.AddBinding(this.EditAction, "<Gamepad>/rightShoulder/", (string)null, (string)null, (string)null);
 
 
             this.EditAction.performed += (Action<InputAction.CallbackContext>)(context =>
@@ -141,7 +142,7 @@ namespace PlateUp_CameraPlus
 
             // Follow
             this.FollowAction = new InputAction("ToggleFollowCamera", (InputActionType)0, "<Keyboard>/F", (string)null, (string)null, (string)null);
-            InputActionSetupExtensions.AddBinding(this.FollowAction, "<Gamepad>/rightShoulder/", (string)null, (string)null, (string)null);
+            //InputActionSetupExtensions.AddBinding(this.FollowAction, "<Gamepad>/rightShoulder/", (string)null, (string)null, (string)null);
 
             this.FollowAction.performed += (Action<InputAction.CallbackContext>)(context =>
             {
