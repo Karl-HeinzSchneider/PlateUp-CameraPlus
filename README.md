@@ -24,18 +24,18 @@ In both modes you can adjust the camera distance/zoom with scroll.
 
 ## Key Bindings - Keyboard
 
-Toggle CameraPlus = **Q**
-Set Static Camera Position = **E**
-Temporary Follow Mode = **hold E**
-Toggle Follow Mode = **F**
-Adjust Zoom = **Mouse Wheel**
+- Toggle CameraPlus = **Q**
+- Set Static Camera Position = **E**
+- Temporary Follow Mode = **hold E**
+- Toggle Follow Mode = **F**
+- Adjust Zoom = **Mouse Wheel**
 
 ## Key Bindings - Gamepad
 
-Toggle CameraPlus = **Right Stick Press**
-Set Static Camera Position = **'RB' / Right Shoulder**
-Temporary Follow Mode = hold **'RB' / Right Shoulder**
-Toggle Follow Mode = **F\***
-Adjust Zoom = Right Stick Y
+- Toggle CameraPlus = **Right Stick Press**
+- Set Static Camera Position = **'RB' / Right Shoulder**
+- Temporary Follow Mode = hold **'RB' / Right Shoulder**
+- Toggle Follow Mode = **F\***
+- Adjust Zoom = Right Stick Y
 
 \*Gamepad Hotkey not active right now, will be changed in a later version.
