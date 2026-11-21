@@ -1,340 +1,205 @@
-﻿using System;
 using System.Reflection;
 
 using Cinemachine;
 using Kitchen;
 using KitchenMods;
-
 using UnityEngine;
 using UnityEngine.InputSystem;
-using Unity.Entities;
-using Unity.Collections;
-
 
 namespace PlateUp_CameraPlus
 {
     public class CameraPlus : GenericSystemBase, IModSystem
     {
-        private InputAction CameraAction;
-        private bool StaticCameraEnabled = false;
+        private static readonly FieldInfo PlayerViewData =
+            typeof(PlayerView).GetField("Data", BindingFlags.Instance | BindingFlags.NonPublic);
 
-        private InputAction EditAction;
-        //private bool EditModeEnabled = false;
-        //
-        private InputAction FollowAction;
-        private bool FollowCameraEnabled = false;
+        private static readonly Vector3 CameraOffset = new Vector3(0f, 35.82595f, -30f);
 
-        private InputAction ScrollAction;
-        private InputAction ScrollActionMouse;
-        private bool IsScrolling = false;
+        private InputAction toggleAction;
+        private InputAction positionAction;
+        private InputAction followAction;
+        private InputAction stickZoomAction;
+        private InputAction wheelZoomAction;
 
-        private Vector3 CameraPosition = new Vector3(0, 0, 0);
-        private Vector3 CameraVelocity = new Vector3(0, 0, 0);
-        private float CameraFOV = 10.0f;
+        private bool cameraEnabled;
+        private bool followEnabled;
+        private bool hasAnchor;
+        private Vector3 anchor;
+        private Vector3 velocity;
+        private float fieldOfView = 10f;
 
-        private bool PositionButtonPressed = false;
-
-        private bool FirstTime = true;
+        private Camera controlledCamera;
+        private CinemachineBrain controlledBrain;
+        private float originalFieldOfView;
+        private PlayerView playerView;
+        private int? trackedPlayerId;
 
         protected override void Initialise()
         {
             base.Initialise();
 
-            //this.RemoveDefaultTriggerBinding();
-            this.InitKeybindings();
+            toggleAction = new InputAction("Toggle CameraPlus", InputActionType.Button, "<Keyboard>/q");
+            toggleAction.AddBinding("<Gamepad>/rightStickPress");
+
+            positionAction = new InputAction("Set Camera Position", InputActionType.Button, "<Keyboard>/e");
+            positionAction.AddBinding("<Gamepad>/rightShoulder");
+
+            followAction = new InputAction("Toggle Follow Mode", InputActionType.Button, "<Keyboard>/f");
+            stickZoomAction = new InputAction("Stick Zoom", InputActionType.Value, "<Gamepad>/rightStick/y");
+            wheelZoomAction = new InputAction("Wheel Zoom", InputActionType.Value, "<Mouse>/scroll/y");
+
+            toggleAction.Enable();
+            positionAction.Enable();
+            followAction.Enable();
+            stickZoomAction.Enable();
+            wheelZoomAction.Enable();
         }
 
         protected override void OnUpdate()
         {
-            Camera MainCamera = Camera.main;
-
-            //
-            if (this.PositionButtonPressed && !this.FollowCameraEnabled)
+            if (toggleAction.WasPressedThisFrame())
             {
-                this.SetCameraPosition();
-                this.FirstTime = false;
+                cameraEnabled = !cameraEnabled;
             }
 
-            if (this.StaticCameraEnabled)
+            if (!cameraEnabled)
             {
-                if (this.IsScrolling)
-                {
-                    this.UpdateScroll();
-                }
-
-                if (this.FollowCameraEnabled || this.FirstTime)
-                {
-                    this.SetCameraPosition();
-                    this.FirstTime = false;
-                }
-
-                ((Behaviour)MainCamera.GetComponent<CinemachineBrain>()).enabled = false;
-                MainCamera.transform.position = Vector3.SmoothDamp(MainCamera.transform.position, this.CameraPosition, ref this.CameraVelocity, 0.5f);
-
-                MainCamera.fieldOfView = this.CameraFOV;
-            }
-            else
-            {
-                ((Behaviour)MainCamera.GetComponent<CinemachineBrain>()).enabled = true;
-            }
-        }
-
-        private void RemoveDefaultTriggerBinding()
-        {
-            // < Gamepad >/ rightTrigger
-
-            foreach (var action in InputSystem.ListEnabledActions())
-            {
-                //Debug.Log(action.ToString());
-
-                int index = 0;
-
-                foreach (var binding in action.bindings)
-                {
-                    //Debug.Log(binding.ToString());
-                    
-                    string name = binding.ToString();
-              
-                    if (name.EndsWith("rightTrigger"))
-                    {     
-                        action.ChangeBinding(index).Erase();
-                    }                   
-
-                    index++;
-                }
-            }
-        }
-
-        private void InitKeybindings()
-        {
-            // https://docs.unity3d.com/Packages/com.unity.inputsystem@1.0/api/UnityEngine.InputSystem.Gamepad.html#properties
-
-            // CameraAction
-            this.CameraAction = new InputAction("ToggleStaticCamera", (InputActionType)0, "<Keyboard>/Q", (string)null, (string)null, (string)null);
-            InputActionSetupExtensions.AddBinding(this.CameraAction, "<Gamepad>/rightStickPress/", (string)null, (string)null, (string)null);
-
-            this.CameraAction.performed += (Action<InputAction.CallbackContext>)(context =>
-            {
-                this.ToggleStaticCamera();
-            });
-            this.CameraAction.Enable();
-
-            //
-            this.EditAction = new InputAction("SetCameraPosition", (InputActionType)0, "<Keyboard>/E", (string)null, (string)null, (string)null);
-            //InputActionSetupExtensions.AddBinding(this.EditAction, "<Gamepad>/selectButton/", (string)null, (string)null, (string)null);
-            //InputActionSetupExtensions.AddBinding(this.EditAction, "<Gamepad>/rightTrigger/", (string)null, (string)null, (string)null);
-            InputActionSetupExtensions.AddBinding(this.EditAction, "<Gamepad>/rightShoulder/", (string)null, (string)null, (string)null);
-
-
-            this.EditAction.performed += (Action<InputAction.CallbackContext>)(context =>
-            {
-                this.SetCameraPosition();
-            });
-            this.EditAction.started += (Action<InputAction.CallbackContext>)(context =>
-            {
-                this.PositionButtonPressed = true;
-            });
-            this.EditAction.canceled += (Action<InputAction.CallbackContext>)(context =>
-            {
-                this.PositionButtonPressed = false;
-            });
-            this.EditAction.Enable();
-
-            // Follow
-            this.FollowAction = new InputAction("ToggleFollowCamera", (InputActionType)0, "<Keyboard>/F", (string)null, (string)null, (string)null);
-            //InputActionSetupExtensions.AddBinding(this.FollowAction, "<Gamepad>/rightShoulder/", (string)null, (string)null, (string)null);
-
-            this.FollowAction.performed += (Action<InputAction.CallbackContext>)(context =>
-            {
-                this.ToggleFollowCamera();
-            });
-            this.FollowAction.Enable();
-
-            // Scroll
-            this.ScrollAction = new InputAction("CameraZoom", (InputActionType)0, "<Gamepad>/rightStick/y", (string)null, (string)null, (string)null);
-            
-            this.ScrollAction.started += (Action<InputAction.CallbackContext>)(context =>
-            {
-                this.IsScrolling = true;
-            });
-            this.ScrollAction.canceled += (Action<InputAction.CallbackContext>)(context =>
-            {
-                this.IsScrolling = false;
-            });         
-            this.ScrollAction.Enable();
-
-            // Scroll Mouse
-            this.ScrollActionMouse = new InputAction("CameraZoomMouse", (InputActionType)0, "<Mouse>/scroll/y", (string)null, (string)null, (string)null);        
-
-            this.ScrollActionMouse.performed += (Action<InputAction.CallbackContext>)(context =>
-            {  
-                this.UpdateScrollMouse();
-            });
-            this.ScrollActionMouse.Enable();
-        }
-
-        private void ToggleStaticCamera()
-        {
-            if (this.StaticCameraEnabled)
-            {
-                this.DisableStaticCamera();
-            }
-            else
-            {
-                this.EnableStaticCamera();
-            }
-        }
-        private void EnableStaticCamera()
-        {
-            this.StaticCameraEnabled = true;
-        }
-
-        private void DisableStaticCamera()
-        {
-            this.StaticCameraEnabled = false;
-        }
-
-
-        private void ToggleFollowCamera()
-        {
-            if (!this.StaticCameraEnabled)
-            {
+                ReleaseCamera();
                 return;
             }
 
-            if (this.FollowCameraEnabled)
+            if (followAction.WasPressedThisFrame())
             {
-                this.DisableFollowCamera();
-            }
-            else
-            {
-                this.EnableFollowCamera();
-            }
-        }
-        private void EnableFollowCamera()
-        {
-            this.FollowCameraEnabled = true;
-        }
-
-        private void DisableFollowCamera()
-        {
-            this.FollowCameraEnabled = false;
-        }
-
-
-        private void UpdateScroll()
-        {
-            //float Delta = 0.2f;
-            float Delta = this.ScrollDeltaScaling(this.CameraFOV);
-            float Scroll = this.ScrollAction.ReadValue<float>();
-
-            if (Scroll > 0)
-            {
-                this.CameraFOV = this.CameraFOV - Delta;
-            }
-            else
-            {
-                this.CameraFOV = this.CameraFOV + Delta;
+                followEnabled = !followEnabled;
             }
 
-            this.CameraFOV = Mathf.Clamp(this.CameraFOV, 3.0f, 69.0f);
-        }
-        private void UpdateScrollMouse()
-        {
-            float Extra = 8.0f;
-            //float Delta = 0.2f;
-            float Delta = this.ScrollDeltaScaling(this.CameraFOV) *Extra;
-            float Scroll = this.ScrollActionMouse.ReadValue<float>();
-            
-
-            if (Scroll > 0)
+            Camera camera = Camera.main;
+            if (controlledCamera != camera)
             {
-                this.CameraFOV = this.CameraFOV - Delta;
-            }
-            else
-            {
-                this.CameraFOV = this.CameraFOV + Delta;
+                ReleaseCamera();
             }
 
-            this.CameraFOV = Mathf.Clamp(this.CameraFOV, 3.0f, 69.0f);
-        }
-        private float ScrollDeltaScaling(float value)
-        {
-            float scaled = 0.110037f * Mathf.Exp(0.00888164f* value);
-            return scaled;
-        }
-
-        private void SetCameraPosition()
-        {
-            //Debug.Log("KHS LOG - SetCameraPosition");
-
-            // Find local player ID
-            int LocalID = 0;
-
-            foreach (PlayerInfo info in Players.Main.All())
+            PlayerView target = FindLocalPlayer();
+            if (!camera || !target)
             {
-                if (info.IsLocalUser)
+                ReleaseCamera();
+                return;
+            }
+
+            if (!controlledBrain)
+            {
+                if (!camera.TryGetComponent(out CinemachineBrain brain) || !brain.isActiveAndEnabled)
                 {
-                    //this.LogObject(info);
-                    LocalID = info.ID;
+                    return;
+                }
+
+                controlledCamera = camera;
+                controlledBrain = brain;
+                originalFieldOfView = camera.fieldOfView;
+                brain.enabled = false;
+            }
+
+            if (!hasAnchor || followEnabled || positionAction.IsPressed() || positionAction.WasPressedThisFrame())
+            {
+                Vector3 position = target.transform.position;
+                anchor = new Vector3(position.x, 0f, position.z) + CameraOffset;
+                hasAnchor = true;
+            }
+
+            UpdateZoom();
+            camera.transform.position = Vector3.SmoothDamp(camera.transform.position, anchor, ref velocity, 0.5f);
+            camera.fieldOfView = fieldOfView;
+        }
+
+        private PlayerView FindLocalPlayer()
+        {
+            int? localPlayerId = null;
+            if (Players.Main != null)
+            {
+                foreach (PlayerInfo player in Players.Main.All())
+                {
+                    if (player.IsLocalUser)
+                    {
+                        localPlayerId = player.ID;
+                        break;
+                    }
+                }
+            }
+
+            if (playerView && playerView.isActiveAndEnabled && trackedPlayerId == localPlayerId)
+            {
+                return playerView;
+            }
+
+            playerView = null;
+            trackedPlayerId = localPlayerId;
+            if (!localPlayerId.HasValue || PlayerViewData == null)
+            {
+                return null;
+            }
+
+            foreach (PlayerView view in Object.FindObjectsOfType<PlayerView>())
+            {
+                if (view.isActiveAndEnabled &&
+                    PlayerViewData.GetValue(view) is PlayerView.ViewData data && data.PlayerID == localPlayerId.Value)
+                {
+                    playerView = view;
                     break;
                 }
             }
 
-            //Debug.Log($"Local ID: {LocalID}");
-
-            //
-            PlayerView[] PlayerViewArray = GameObject.FindObjectsOfType<PlayerView>();
-
-            foreach (PlayerView view in PlayerViewArray)
-            {
-                int ID = this.GetPlayerID(view);
-
-                //Debug.Log($"check ID: {ID}");
-
-                if (ID != LocalID)
-                {
-                    continue;
-                }
-
-                Vector3 ViewPosition = view.transform.position;
-
-                // default 35.82595
-                float Height = 35.82595f;
-                ViewPosition.y = Height;
-
-                float DeltaZ = 30f;
-
-                this.CameraPosition = new Vector3(ViewPosition.x, Height, ViewPosition.z - DeltaZ);
-
-                //Component MainCamera = Camera.main;
-                //Debug.Log("MainCamera XYZ");
-                //Debug.Log(MainCamera.transform.position.x);
-                //Debug.Log(MainCamera.transform.position.y);
-                //Debug.Log(MainCamera.transform.position.z);               
-            }
+            return playerView;
         }
 
-        private int GetPlayerID(PlayerView view)
+        private void UpdateZoom()
         {
-            return ((PlayerView.ViewData)typeof(PlayerView).GetField("Data", BindingFlags.Instance | BindingFlags.NonPublic).GetValue((object)view)).PlayerID;
+            float wheel = wheelZoomAction.ReadValue<float>();
+            float stick = stickZoomAction.ReadValue<float>();
+            float zoom = wheel == 0f ? 0f : Mathf.Sign(wheel) * 8f;
+            if (Mathf.Abs(stick) > 0.15f)
+            {
+                zoom += stick * UnityEngine.Time.unscaledDeltaTime * 60f;
+            }
+
+            float scale = 0.110037f * Mathf.Exp(0.00888164f * fieldOfView);
+            fieldOfView = Mathf.Clamp(fieldOfView - zoom * scale, 3f, 69f);
         }
 
-        private void LogObject(object obj)
+        private void ReleaseCamera()
         {
-            Debug.Log("--KHS LOG obj:");
-            // Get the type of the object
-            Type objType = obj.GetType();
-
-            // Get all properties of the object
-            PropertyInfo[] properties = objType.GetProperties();
-
-            // Log each property and its value
-            foreach (PropertyInfo property in properties)
+            if (controlledCamera)
             {
-                object value = property.GetValue(obj, null);
-                Debug.Log(property.Name + ": " + value);
+                controlledCamera.fieldOfView = originalFieldOfView;
             }
+
+            if (controlledBrain)
+            {
+                controlledBrain.enabled = true;
+            }
+
+            controlledCamera = null;
+            controlledBrain = null;
+            hasAnchor = false;
+            velocity = Vector3.zero;
+        }
+
+        protected override void OnStopRunning()
+        {
+            ReleaseCamera();
+            cameraEnabled = false;
+            playerView = null;
+            base.OnStopRunning();
+        }
+
+        protected override void OnDestroy()
+        {
+            ReleaseCamera();
+            toggleAction?.Dispose();
+            positionAction?.Dispose();
+            followAction?.Dispose();
+            stickZoomAction?.Dispose();
+            wheelZoomAction?.Dispose();
+            base.OnDestroy();
         }
     }
 }
